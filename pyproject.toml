@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tiny-trace-otel"
+version = "0.1.0"
+description = "A tiny, stdlib-only OpenTelemetry-compatible OTLP/HTTP tracing exporter for Python."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Hussain Al-Saibai", email = "hussain.alsaibai@gmail.com" },
+]
+keywords = ["opentelemetry", "otlp", "tracing", "distributed-tracing", "w3c-trace-context", "telemetry", "openclaw", "observability", "zero-dependency"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/hussain-alsaibai/tiny-trace-otel"
+Repository = "https://github.com/hussain-alsaibai/tiny-trace-otel"
+Issues = "https://github.com/hussain-alsaibai/tiny-trace-otel/issues"
+
+[tool.setuptools]
+py-modules = ["tiny_trace_otel"]
+
+[tool.setuptools.package-data]
+"*" = ["README.md", "LICENSE", "llms.txt"]

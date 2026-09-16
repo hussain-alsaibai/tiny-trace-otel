@@ -1,0 +1,76 @@
+# tiny-trace-otel
+
+> A tiny, stdlib-only OpenTelemetry-compatible OTLP/HTTP tracing exporter for Python.
+> W3C Trace Context, OTLP/JSON envelopes, batch processor. ~440 lines. Zero deps.
+
+## What it is
+The smallest way to ship OpenTelemetry-compatible spans from Python without
+pulling in the ~6MB `@opentelemetry/exporter-trace-otlp-http` package.
+Drops a `Tracer` and `BatchSpanProcessor` with synchronous OTLP/HTTP
+export into any collector (Honeycomb, SigNoz, Tempo, Datadog, Jaeger).
+
+## When to use it
+- You're shipping traces from a Python service and don't want 6MB of deps for one POST.
+- You want OTLP/HTTP JSON wire-format compat with all major backends.
+- You want a `with span:` block that auto-ends + auto-records exceptions.
+- You want W3C Trace Context parse/format helpers for cross-service propagation.
+
+## When NOT to use it
+- You need gRPC OTLP — this is HTTP/JSON only (by design).
+- You push >10k spans/sec — use the official OTel SDK which streams gRPC.
+- You need metrics or logs (only traces here; see `tiny-cost-tracker` for cost-only metrics).
+
+## Public API
+- `Tracer(name, resource_attrs=None, parent_context=None)`
+  - `start_span(name, kind="INTERNAL", attributes=None, parent=None) -> Span`
+- `Span(context, name, kind=...)`
+  - `set_attribute(k, v)`, `set_attributes({...})`, `add_event(name, **attrs)`
+  - `set_status(status, message=None)` — `StatusCode.{UNSET, OK, ERROR}`
+  - `record_exception(exc)` — adds event + sets ERROR
+  - `end(status=None, message=None)`
+  - `with s:` context manager
+  - `to_otel_dict() -> dict` — OTLP JSON wire format
+- `SpanKind.{INTERNAL, SERVER, CLIENT, PRODUCER, CONSUMER}`
+- `SpanContext(trace_id, span_id, parent_span_id=None, trace_flags="01", trace_state="", is_remote=False)`
+- `OTLPHttpExporter(endpoint, headers, timeout_seconds=5.0)`
+  - `export(spans) -> (http_status, error_or_None)`
+- `StdoutExporter(stream=None)` for local debug
+- `BatchSpanProcessor(exporter, max_queue_size=1024, max_batch_size=64, export_interval_seconds=2.0, export_timeout_seconds=30.0)`
+  - `on_end(span)`, `force_flush()`, `shutdown(timeout_seconds=None)`
+  - `dropped_count` — spans dropped due to queue overflow
+- `parse_traceparent(value) -> SpanContext` — W3C parse
+- `format_traceparent(trace_id, span_id, flags="01") -> str` — W3C format
+- `get_tracer(name="tiny-trace-otel") -> Tracer` — singleton
+- `set_processor(processor) -> Token` / `reset_processor(token)` — active processor
+- `TraceError` — raised on malformed headers / unknown status
+
+## Wire format
+OTLP/HTTP JSON envelopes per the official specification. Spans serialise
+via `to_otel_dict()`. Resource attributes are prefixed with `process.*`
+(then de-prefixed by the exporter when it builds the envelope).
+
+## Threading
+- Sync API; for asyncio, wrap `with tracer.start_span(...)` in `asyncio.to_thread`.
+- `BatchSpanProcessor` runs one daemon worker thread.
+- `OTLPHttpExporter` uses `urllib.request`, which releases the GIL during I/O.
+
+## Installation
+```bash
+pip install tiny-trace-otel
+# or vendor the single file
+```
+
+## Common pitfalls
+- `SpanContext.parent_span_id` must be 16 lowercase hex chars or None.
+- `traceparent` flags byte MUST be 2 lowercase hex chars; only `01` (sampled) is meaningful here.
+- OTLP envelope requires `resourceSpans[].scopeSpans[].spans[]` even if you ship 1 span.
+- Status code `0` (UNSET) is the default; `2` (ERROR) overrides on exception via `record_exception`.
+
+## Integration with OpenClaw ecosystem
+- `tiny-cost-tracker` — its `Span("charge")` can set attribute `cost.usd`.
+- `tiny-budget-ledger` — gate every span on `can_spend()` before opening.
+- `tiny-otel` (Node.js) — sibling JS library; same wire format.
+- `tiny-mcp-server` / `tiny-mcp-client` — wrap MCP traffic in OTLP spans.
+
+## Version
+0.1.0 (2026-09-16)
