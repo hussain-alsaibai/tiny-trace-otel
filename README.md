@@ -61,7 +61,8 @@ The official `@opentelemetry/exporter-trace-otlp-http` package pulls in ~6 MB of
 
 ```bash
 # pip (when published)
-pip install tiny-trace-otel
+# From GitHub (recommended -- not yet on PyPI)
+pip install git+https://github.com/hussain-alsaibai/tiny-trace-otel.git
 
 # Or just copy the single file
 curl -O https://raw.githubusercontent.com/hussain-alsaibai/tiny-trace-otel/main/tiny_trace_otel.py
